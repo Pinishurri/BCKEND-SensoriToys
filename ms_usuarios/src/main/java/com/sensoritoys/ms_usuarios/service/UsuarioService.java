@@ -55,6 +55,7 @@ public class UsuarioService {
 
         Usuario usuario = new Usuario();
         usuario.setNombre(datos.getNombre().trim());
+        usuario.setApellido(datos.getApellido() == null ? null : datos.getApellido().trim());
         usuario.setEmail(email);
         usuario.setContraseniaHash(passwordEncoder.encode(datos.getContrasenia()));
         usuario.setDireccionEnvio(datos.getDireccionEnvio());
@@ -85,6 +86,7 @@ public class UsuarioService {
         }
 
         existente.setNombre(datos.getNombre().trim());
+        existente.setApellido(datos.getApellido() == null ? null : datos.getApellido().trim());
         existente.setEmail(email);
         if (datos.getContrasenia() != null && !datos.getContrasenia().isBlank()) {
             existente.setContraseniaHash(passwordEncoder.encode(datos.getContrasenia()));
@@ -105,6 +107,16 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new EntityNotFoundException("No existe el usuario"));
         Rol rol = rolRepository.findById(idRol)
+                .orElseThrow(() -> new EntityNotFoundException("No existe el rol"));
+        usuario.setRol(rol);
+        return usuarioRepository.save(usuario);
+    }
+
+    public Usuario asignarRol(Long idUsuario, NombreRol nombreRol) {
+        if (nombreRol == null) throw new IllegalArgumentException("El rol es obligatorio");
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new EntityNotFoundException("No existe el usuario"));
+        Rol rol = rolRepository.findByNombre(nombreRol)
                 .orElseThrow(() -> new EntityNotFoundException("No existe el rol"));
         usuario.setRol(rol);
         return usuarioRepository.save(usuario);
@@ -157,4 +169,28 @@ public class UsuarioService {
     usuario.setEstado(EstadoUsuario.ACTIVO);
     usuarioRepository.save(usuario);
     }
+
+
+    public void cambiarContrasenia(Long id, String contraseniaActual, String contraseniaNueva) {
+    if (contraseniaActual == null || contraseniaActual.isBlank()) {
+        throw new IllegalArgumentException("Debes ingresar tu contraseña actual");
+    }
+
+    if (contraseniaNueva == null || contraseniaNueva.length() < 8) {
+        throw new IllegalArgumentException("La nueva contraseña debe tener al menos 8 caracteres");
+    }
+
+    Usuario usuario = usuarioRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("No existe el usuario"));
+
+    if (!passwordEncoder.matches(contraseniaActual, usuario.getContraseniaHash())) {
+        throw new IllegalArgumentException("La contraseña actual no es correcta");
+    }
+
+    usuario.setContraseniaHash(passwordEncoder.encode(contraseniaNueva));
+    usuarioRepository.save(usuario);
+}
+
+
+
 }

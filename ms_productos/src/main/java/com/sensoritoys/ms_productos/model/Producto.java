@@ -46,7 +46,7 @@ public class Producto {
 
     private String edad;
 
-    @Column(length = 500)
+    @Column(length = 1000000)
     private String imagenUrl;
 
     @Column(nullable = false)

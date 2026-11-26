@@ -31,6 +31,8 @@ public class Usuario {
 
     private String nombre;
 
+    private String apellido;
+
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -48,4 +50,12 @@ public class Usuario {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "rol_id")
     private Rol rol;
+
+    // Conserva compatibilidad con el constructor previo a incorporar apellido.
+    public Usuario(Long id, String nombre, String email, String contraseniaHash,
+                   String direccionEnvio, String referenciaPago, EstadoUsuario estado,
+                   LocalDateTime fechaCreacion, Rol rol) {
+        this(id, nombre, null, email, contraseniaHash, direccionEnvio,
+                referenciaPago, estado, fechaCreacion, rol);
+    }
 }

@@ -16,6 +16,7 @@ public class UsuarioResponseDTO {
 
     private Long id;
     private String nombre;
+    private String apellido;
     private String email;
     private String direccionEnvio;
     private String referenciaPago;
@@ -27,6 +28,7 @@ public class UsuarioResponseDTO {
         return new UsuarioResponseDTO(
                 usuario.getId(),
                 usuario.getNombre(),
+                usuario.getApellido(),
                 usuario.getEmail(),
                 usuario.getDireccionEnvio(),
                 usuario.getReferenciaPago(),

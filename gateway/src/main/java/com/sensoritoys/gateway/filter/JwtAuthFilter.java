@@ -29,7 +29,7 @@ import reactor.core.publisher.Mono;
 @Component
 public class JwtAuthFilter implements GlobalFilter, Ordered {
 
-    private enum Acceso { PUBLICO, AUTENTICADO, PROPIO_O_ADMIN, ADMIN }
+    private enum Acceso { PUBLICO, AUTENTICADO, PROPIO_O_ADMIN, ADMIN, ADMIN_OTROS }
 
     private record Regla(HttpMethod metodo, PathPattern patron, Acceso acceso) {
     }
@@ -40,10 +40,12 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     private static final List<Regla> REGLAS = List.of(
             regla(HttpMethod.POST, "/api/v1/usuarios/login", Acceso.PUBLICO),
+            regla(HttpMethod.POST, "/api/v1/auth/login", Acceso.PUBLICO),
             regla(HttpMethod.POST, "/api/v1/usuarios/registro", Acceso.PUBLICO),
             regla(HttpMethod.POST, "/api/v1/usuarios/logout", Acceso.AUTENTICADO),
             regla(HttpMethod.GET, "/api/v1/usuarios", Acceso.ADMIN),
-            regla(HttpMethod.PUT, "/api/v1/usuarios/{id}/rol/{idRol}", Acceso.ADMIN),
+            regla(HttpMethod.PUT, "/api/v1/usuarios/{id}/rol/{idRol}", Acceso.ADMIN_OTROS),
+            regla(HttpMethod.PUT, "/api/v1/usuarios/{id}/rol", Acceso.ADMIN_OTROS),
             regla(null, "/api/v1/usuarios/{id}", Acceso.PROPIO_O_ADMIN),
 
             regla(HttpMethod.GET, "/api/v1/productos", Acceso.PUBLICO),
@@ -90,11 +92,14 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return rechazar(exchange, HttpStatus.UNAUTHORIZED, "Token ausente o inválido");
         }
 
-        boolean esAdmin = ROL_ADMIN.equals(claims.get().get("rol", String.class));
+        String rolToken = claims.get().get("rol", String.class);
+        if (rolToken == null) rolToken = claims.get().get("role", String.class);
+        boolean esAdmin = ROL_ADMIN.equals(rolToken);
 
         boolean autorizado = switch (acceso) {
             case AUTENTICADO -> true;
             case ADMIN -> esAdmin;
+            case ADMIN_OTROS -> esAdmin && esOtroUsuario(regla.get(), ruta, claims.get());
             case PROPIO_O_ADMIN -> esAdmin || esPropietario(regla.get(), ruta, claims.get());
             case PUBLICO -> true;
         };
@@ -131,8 +136,18 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return false;
         }
         String idRecurso = info.getUriVariables().get("id");
-        String idUsuario = claims.get("uid", String.class);
+        Object uid = claims.get("uid");
+        String idUsuario = uid == null ? null : uid.toString();
         return idRecurso != null && idRecurso.equals(idUsuario);
+    }
+
+    private boolean esOtroUsuario(Regla regla, PathContainer ruta, Claims claims) {
+        PathPattern.PathMatchInfo info = regla.patron().matchAndExtract(ruta);
+        if (info == null) return false;
+        String idRecurso = info.getUriVariables().get("id");
+        Object uid = claims.get("uid");
+        String idUsuario = uid == null ? null : uid.toString();
+        return idRecurso != null && !idRecurso.equals(idUsuario);
     }
 
     private Mono<Void> rechazar(ServerWebExchange exchange, HttpStatus estado, String mensaje) {
