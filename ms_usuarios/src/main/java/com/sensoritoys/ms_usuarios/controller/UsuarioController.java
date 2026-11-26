@@ -18,7 +18,11 @@ import com.sensoritoys.ms_usuarios.dto.LoginRequestDTO;
 import com.sensoritoys.ms_usuarios.dto.LoginResponseDTO;
 import com.sensoritoys.ms_usuarios.dto.UsuarioRequestDTO;
 import com.sensoritoys.ms_usuarios.dto.UsuarioResponseDTO;
+import com.sensoritoys.ms_usuarios.model.NombreRol;
 import com.sensoritoys.ms_usuarios.service.UsuarioService;
+import org.springframework.web.bind.annotation.PatchMapping;
+import com.sensoritoys.ms_usuarios.dto.CambiarContraseniaRequestDTO;
+
 
 @RestController
 @RequestMapping("/api/v1/usuarios")
@@ -64,6 +68,11 @@ public class UsuarioController {
         return ResponseEntity.ok(UsuarioResponseDTO.desde(usuarioService.asignarRol(id, idRol)));
     }
 
+    @PutMapping("/{id}/rol")
+    public ResponseEntity<UsuarioResponseDTO> asignarRolPorNombre(@PathVariable Long id, @org.springframework.web.bind.annotation.RequestParam NombreRol rol) {
+        return ResponseEntity.ok(UsuarioResponseDTO.desde(usuarioService.asignarRol(id, rol)));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> iniciarSesion(@RequestBody LoginRequestDTO request) {
         return ResponseEntity.ok(usuarioService.iniciarSesion(request.getEmail(), request.getContrasenia()));
@@ -79,4 +88,21 @@ public class UsuarioController {
         usuarioService.activarUsuario(id);
         return ResponseEntity.noContent().build();
     }
+
+
+    @PatchMapping("/{id}/contrasenia")
+public ResponseEntity<Void> cambiarContrasenia(
+        @PathVariable Long id,
+        @RequestBody CambiarContraseniaRequestDTO request) {
+
+    usuarioService.cambiarContrasenia(
+            id,
+            request.getContraseniaActual(),
+            request.getContraseniaNueva()
+    );
+
+    return ResponseEntity.noContent().build();
+}
+
+
 }
