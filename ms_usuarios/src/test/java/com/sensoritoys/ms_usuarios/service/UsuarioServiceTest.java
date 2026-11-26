@@ -156,4 +156,80 @@ class UsuarioServiceTest {
 
         assertThrows(UsuarioInactivoException.class, () -> usuarioService.iniciarSesion("ana@test.com", "clave123"));
     }
+
+    private UsuarioRequestDTO solicitudConDireccion(String region, String ciudad) {
+        UsuarioRequestDTO datos = solicitud("ana@test.com");
+        datos.setCalle("Manuel Montt");
+        datos.setNumero("123");
+        datos.setDeptoOficina("Casa B");
+        datos.setComuna("Hualpén");
+        datos.setRegion(region);
+        datos.setCiudad(ciudad);
+        return datos;
+    }
+
+    private void prepararRegistro() {
+        when(usuarioRepository.findByEmail("ana@test.com")).thenReturn(Optional.empty());
+        when(rolRepository.findByNombre(NombreRol.CLIENTE)).thenReturn(Optional.of(new Rol(2L, NombreRol.CLIENTE)));
+        when(passwordEncoder.encode("clave123")).thenReturn("hash-bcrypt");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    @Test
+    void testDireccionValidaSeGuardaYSeCompone() {
+        prepararRegistro();
+
+        Usuario resultado = usuarioService.registrarUsuario(solicitudConDireccion("Biobío", "Concepción"));
+
+        assertEquals("Biobío", resultado.getRegion());
+        assertEquals("Concepción", resultado.getCiudad());
+        assertEquals("Manuel Montt #123, Casa/Depto/Of: Casa B, Hualpén, Concepción, Biobío", resultado.getDireccionEnvio());
+    }
+
+    @Test
+    void testCiudadQueNoPerteneceALaRegionLanza400() {
+        when(usuarioRepository.findByEmail("ana@test.com")).thenReturn(Optional.empty());
+        when(rolRepository.findByNombre(NombreRol.CLIENTE)).thenReturn(Optional.of(new Rol(2L, NombreRol.CLIENTE)));
+        when(passwordEncoder.encode("clave123")).thenReturn("hash-bcrypt");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> usuarioService.registrarUsuario(solicitudConDireccion("Biobío", "Santiago")));
+    }
+
+    @Test
+    void testRegionInexistenteLanza400() {
+        when(usuarioRepository.findByEmail("ana@test.com")).thenReturn(Optional.empty());
+        when(rolRepository.findByNombre(NombreRol.CLIENTE)).thenReturn(Optional.of(new Rol(2L, NombreRol.CLIENTE)));
+        when(passwordEncoder.encode("clave123")).thenReturn("hash-bcrypt");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> usuarioService.registrarUsuario(solicitudConDireccion("Narnia", "Concepción")));
+    }
+
+    @Test
+    void testDireccionIncompletaLanza400() {
+        when(usuarioRepository.findByEmail("ana@test.com")).thenReturn(Optional.empty());
+        when(rolRepository.findByNombre(NombreRol.CLIENTE)).thenReturn(Optional.of(new Rol(2L, NombreRol.CLIENTE)));
+        when(passwordEncoder.encode("clave123")).thenReturn("hash-bcrypt");
+        UsuarioRequestDTO datos = solicitudConDireccion("Biobío", "Concepción");
+        datos.setComuna("  ");
+
+        assertThrows(IllegalArgumentException.class, () -> usuarioService.registrarUsuario(datos));
+    }
+
+    @Test
+    void testDireccionVaciaLimpiaLosCampos() {
+        prepararRegistro();
+        UsuarioRequestDTO datos = solicitudConDireccion("", "");
+        datos.setCalle("");
+        datos.setNumero("");
+        datos.setDeptoOficina("");
+        datos.setComuna("");
+
+        Usuario resultado = usuarioService.registrarUsuario(datos);
+
+        assertEquals(null, resultado.getCalle());
+        assertEquals(null, resultado.getRegion());
+        assertEquals(null, resultado.getDireccionEnvio());
+    }
 }

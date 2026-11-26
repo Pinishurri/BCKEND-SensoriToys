@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.sensoritoys.ms_usuarios.config.JwtUtil;
+import com.sensoritoys.ms_usuarios.config.UbicacionesChile;
 import com.sensoritoys.ms_usuarios.dto.LoginResponseDTO;
 import com.sensoritoys.ms_usuarios.dto.UsuarioRequestDTO;
 import com.sensoritoys.ms_usuarios.exception.CredencialesInvalidasException;
@@ -58,8 +59,8 @@ public class UsuarioService {
         usuario.setApellido(datos.getApellido() == null ? null : datos.getApellido().trim());
         usuario.setEmail(email);
         usuario.setContraseniaHash(passwordEncoder.encode(datos.getContrasenia()));
-        usuario.setDireccionEnvio(datos.getDireccionEnvio());
         usuario.setReferenciaPago(datos.getReferenciaPago());
+        aplicarDatosAdicionales(usuario, datos);
         usuario.setEstado(EstadoUsuario.ACTIVO);
         usuario.setFechaCreacion(LocalDateTime.now());
         usuario.setRol(rolCliente);
@@ -91,8 +92,8 @@ public class UsuarioService {
         if (datos.getContrasenia() != null && !datos.getContrasenia().isBlank()) {
             existente.setContraseniaHash(passwordEncoder.encode(datos.getContrasenia()));
         }
-        existente.setDireccionEnvio(datos.getDireccionEnvio());
         existente.setReferenciaPago(datos.getReferenciaPago());
+        aplicarDatosAdicionales(existente, datos);
         return usuarioRepository.save(existente);
     }
 
@@ -193,4 +194,58 @@ public class UsuarioService {
 
 
 
+
+    private void aplicarDatosAdicionales(Usuario usuario, UsuarioRequestDTO datos) {
+        if (datos.getSegundoApellido() != null) {
+            usuario.setSegundoApellido(limpiar(datos.getSegundoApellido()));
+        }
+
+        boolean direccionEstructurada = datos.getCalle() != null || datos.getNumero() != null
+                || datos.getDeptoOficina() != null || datos.getComuna() != null || datos.getCiudad() != null
+                || datos.getRegion() != null;
+
+        if (!direccionEstructurada) {
+            usuario.setDireccionEnvio(datos.getDireccionEnvio());
+            return;
+        }
+
+        String calle = limpiar(datos.getCalle());
+        String numero = limpiar(datos.getNumero());
+        String deptoOficina = limpiar(datos.getDeptoOficina());
+        String comuna = limpiar(datos.getComuna());
+        String ciudad = limpiar(datos.getCiudad());
+        String region = limpiar(datos.getRegion());
+
+        boolean sinDatos = calle == null && numero == null && deptoOficina == null && comuna == null
+                && ciudad == null && region == null;
+        if (!sinDatos && (calle == null || numero == null || comuna == null || ciudad == null || region == null)) {
+            throw new IllegalArgumentException("La dirección debe incluir calle, número, comuna, ciudad y región");
+        }
+        if (!sinDatos) {
+            if (!UbicacionesChile.existeRegion(region)) {
+                throw new IllegalArgumentException("La región seleccionada no es válida");
+            }
+            if (!UbicacionesChile.ciudadPerteneceARegion(region, ciudad)) {
+                throw new IllegalArgumentException("La ciudad seleccionada no pertenece a la región");
+            }
+        }
+
+        usuario.setCalle(calle);
+        usuario.setNumero(numero);
+        usuario.setDeptoOficina(deptoOficina);
+        usuario.setComuna(comuna);
+        usuario.setCiudad(ciudad);
+        usuario.setRegion(region);
+        usuario.setDireccionEnvio(sinDatos ? null : componerDireccion(calle, numero, deptoOficina, comuna, ciudad, region));
+    }
+
+    private String componerDireccion(String calle, String numero, String deptoOficina, String comuna,
+                                     String ciudad, String region) {
+        String complemento = deptoOficina == null ? "" : ", Casa/Depto/Of: " + deptoOficina;
+        return calle + " #" + numero + complemento + ", " + comuna + ", " + ciudad + ", " + region;
+    }
+
+    private String limpiar(String valor) {
+        return valor == null || valor.isBlank() ? null : valor.trim();
+    }
 }

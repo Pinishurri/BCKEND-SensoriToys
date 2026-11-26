@@ -46,7 +46,7 @@ public class Producto {
 
     private String edad;
 
-    @Column(length = 1000000)
+    @Column(columnDefinition = "LONGTEXT")
     private String imagenUrl;
 
     @Column(nullable = false)

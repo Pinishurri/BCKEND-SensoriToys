@@ -46,18 +46,22 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             regla(HttpMethod.GET, "/api/v1/usuarios", Acceso.ADMIN),
             regla(HttpMethod.PUT, "/api/v1/usuarios/{id}/rol/{idRol}", Acceso.ADMIN_OTROS),
             regla(HttpMethod.PUT, "/api/v1/usuarios/{id}/rol", Acceso.ADMIN_OTROS),
+            regla(HttpMethod.PATCH, "/api/v1/usuarios/{id}/contrasenia", Acceso.PROPIO_O_ADMIN),
             regla(null, "/api/v1/usuarios/{id}", Acceso.PROPIO_O_ADMIN),
 
             regla(HttpMethod.GET, "/api/v1/productos", Acceso.PUBLICO),
             regla(HttpMethod.GET, "/api/v1/productos/todos", Acceso.ADMIN),
             regla(HttpMethod.GET, "/api/v1/productos/dashboard/stock", Acceso.ADMIN),
+            regla(HttpMethod.GET, "/api/v1/productos/imagenes/{nombre}", Acceso.PUBLICO),
             regla(HttpMethod.GET, "/api/v1/productos/{id}", Acceso.PUBLICO),
 
             regla(HttpMethod.GET, "/api/v1/categorias", Acceso.PUBLICO),
 
             regla(HttpMethod.POST, "/api/v1/pedidos", Acceso.AUTENTICADO),
-            regla(HttpMethod.POST, "/api/v1/pedidos", Acceso.AUTENTICADO),
-            regla(HttpMethod.GET, "/api/v1/pedidos/usuario/{id}", Acceso.PROPIO_O_ADMIN));
+            regla(HttpMethod.GET, "/api/v1/pedidos/usuario/{id}", Acceso.PROPIO_O_ADMIN),
+
+            regla(HttpMethod.POST, "/api/v1/reclamos", Acceso.AUTENTICADO),
+            regla(HttpMethod.GET, "/api/v1/reclamos/usuario/{id}", Acceso.PROPIO_O_ADMIN));
 
     private final JwtUtil jwtUtil;
     private final String origenPermitido;

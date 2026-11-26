@@ -51,11 +51,25 @@ public class Usuario {
     @JoinColumn(name = "rol_id")
     private Rol rol;
 
+    private String segundoApellido;
+
+    private String calle;
+
+    private String numero;
+
+    private String deptoOficina;
+
+    private String comuna;
+
+    private String ciudad;
+
+    private String region;
+
     // Conserva compatibilidad con el constructor previo a incorporar apellido.
     public Usuario(Long id, String nombre, String email, String contraseniaHash,
                    String direccionEnvio, String referenciaPago, EstadoUsuario estado,
                    LocalDateTime fechaCreacion, Rol rol) {
         this(id, nombre, null, email, contraseniaHash, direccionEnvio,
-                referenciaPago, estado, fechaCreacion, rol);
+                referenciaPago, estado, fechaCreacion, rol, null, null, null, null, null, null, null);
     }
 }

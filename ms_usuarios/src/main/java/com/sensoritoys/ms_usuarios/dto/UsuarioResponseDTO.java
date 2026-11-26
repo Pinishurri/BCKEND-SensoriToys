@@ -23,6 +23,13 @@ public class UsuarioResponseDTO {
     private EstadoUsuario estado;
     private LocalDateTime fechaCreacion;
     private String rol;
+    private String segundoApellido;
+    private String calle;
+    private String numero;
+    private String deptoOficina;
+    private String comuna;
+    private String ciudad;
+    private String region;
 
     public static UsuarioResponseDTO desde(Usuario usuario) {
         return new UsuarioResponseDTO(
@@ -34,6 +41,13 @@ public class UsuarioResponseDTO {
                 usuario.getReferenciaPago(),
                 usuario.getEstado(),
                 usuario.getFechaCreacion(),
-                usuario.getRol() != null ? usuario.getRol().getNombre().name() : null);
+                usuario.getRol() != null ? usuario.getRol().getNombre().name() : null,
+                usuario.getSegundoApellido(),
+                usuario.getCalle(),
+                usuario.getNumero(),
+                usuario.getDeptoOficina(),
+                usuario.getComuna(),
+                usuario.getCiudad(),
+                usuario.getRegion());
     }
 }

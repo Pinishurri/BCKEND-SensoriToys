@@ -53,6 +53,10 @@ spring:
               uri: http://localhost:8083
               predicates:
                 - Path=/api/v1/pedidos/**
+            - id: ms-reclamos
+              uri: http://localhost:8083
+              predicates:
+                - Path=/api/v1/reclamos/**
 
 sensoritoys:
   cors:

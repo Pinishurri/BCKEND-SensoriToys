@@ -183,4 +183,38 @@ class JwtAuthFilterTest {
         assertFalse(pasaPorElFiltro(ajenos));
         assertEquals(HttpStatus.FORBIDDEN, ajenos.getResponse().getStatusCode());
 }
+
+    @Test
+    void reclamosSegunPermisos() {
+        String cliente = token("ana@test.com", "5", "CLIENTE");
+        String admin = token("admin@sensoritoys.cl", "1", "ADMIN");
+
+        assertTrue(pasaPorElFiltro(solicitar(MockServerHttpRequest.post("/api/v1/reclamos"), cliente)));
+        assertFalse(pasaPorElFiltro(solicitar(MockServerHttpRequest.post("/api/v1/reclamos"), null)));
+        assertTrue(pasaPorElFiltro(solicitar(MockServerHttpRequest.get("/api/v1/reclamos/usuario/5"), cliente)));
+        assertFalse(pasaPorElFiltro(solicitar(MockServerHttpRequest.get("/api/v1/reclamos/usuario/6"), cliente)));
+        assertFalse(pasaPorElFiltro(solicitar(MockServerHttpRequest.get("/api/v1/reclamos"), cliente)));
+        assertTrue(pasaPorElFiltro(solicitar(MockServerHttpRequest.get("/api/v1/reclamos"), admin)));
+        assertFalse(pasaPorElFiltro(solicitar(MockServerHttpRequest.patch("/api/v1/reclamos/1/estado"), cliente)));
+        assertTrue(pasaPorElFiltro(solicitar(MockServerHttpRequest.patch("/api/v1/reclamos/1/estado"), admin)));
+    }
+
+    @Test
+    void clienteCambiaSoloSuPropiaContrasenia() {
+        String cliente = token("ana@test.com", "5", "CLIENTE");
+
+        assertTrue(pasaPorElFiltro(solicitar(MockServerHttpRequest.patch("/api/v1/usuarios/5/contrasenia"), cliente)));
+        assertFalse(pasaPorElFiltro(solicitar(MockServerHttpRequest.patch("/api/v1/usuarios/6/contrasenia"), cliente)));
+    }
+
+    @Test
+    void imagenesSeVenSinSesionPeroSoloAdminLasSube() {
+        String cliente = token("ana@test.com", "5", "CLIENTE");
+        String admin = token("admin@sensoritoys.cl", "1", "ADMIN");
+
+        assertTrue(pasaPorElFiltro(solicitar(MockServerHttpRequest.get("/api/v1/productos/imagenes/foto.jpg"), null)));
+        assertFalse(pasaPorElFiltro(solicitar(MockServerHttpRequest.post("/api/v1/productos/imagen"), null)));
+        assertFalse(pasaPorElFiltro(solicitar(MockServerHttpRequest.post("/api/v1/productos/imagen"), cliente)));
+        assertTrue(pasaPorElFiltro(solicitar(MockServerHttpRequest.post("/api/v1/productos/imagen"), admin)));
+    }
 }
